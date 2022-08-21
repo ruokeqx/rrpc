@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -64,10 +65,10 @@ func day1server() {
 	}
 }
 
-func main() {
+func day2client_day3service() {
 	log.SetFlags(0)
 	addr := make(chan string)
-	registerService()
+	registerService() // day3 service register
 	go startServer(addr)
 	client, _ := rrpc.Dial("tcp", <-addr)
 	defer func() { _ = client.Close() }()
@@ -81,14 +82,22 @@ func main() {
 			defer wg.Done()
 			// args := fmt.Sprintf("rrpc req %d", i)
 			// var reply string
+			// if err := client.Call("Foo.Sum", args, &reply); err != nil {
+			// 	log.Fatal("call Foo.Sum error:", err)
+			// }
+			// log.Println("reply:", reply)
 			args := &Args{Num1: i, Num2: i * i}
+			ctx, _ := context.WithTimeout(context.Background(), time.Second)
 			var reply int
-			if err := client.Call("Foo.Sum", args, &reply); err != nil {
+			if err := client.Call(ctx, "Foo.Sum", args, &reply); err != nil {
 				log.Fatal("call Foo.Sum error:", err)
 			}
-			// log.Println("reply:", reply)
 			log.Printf("%d + %d = %d", args.Num1, args.Num2, reply)
 		}(i)
 	}
 	wg.Wait()
+}
+
+func main() {
+	day2client_day3service()
 }
