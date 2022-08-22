@@ -101,3 +101,45 @@ func (server *Server) handleRequest(cc codec.Codec, req *request, sending *sync.
 	}
 }
 ```
+
+day5——http support
+
+pass
+
+day6——load balance
+
+MultiServersDiscovery可手动指定多个server(没有注册中心的解决方案)
+
+```go
+func (d *MultiServersDiscovery) Get(mode SelectMode) (string, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	n := len(d.servers)
+	if n == 0 {
+		return "", errors.New("rpc discovery: no available servers")
+	}
+	switch mode {
+	case RandomSelect:
+		return d.servers[d.r.Intn(n)], nil
+	case RoundRobinSelect:
+		s := d.servers[d.index%n] // servers could be updated, so mode n to ensure safety
+		d.index = (d.index + 1) % n
+		return s, nil
+	default:
+		return "", errors.New("rpc discovery: not supported select mode")
+	}
+}
+```
+
+day7——registry
+
+redistry构建一个简单的http注册中心 通过POST发送心跳包维持server GET获取server列表
+
+RRegistryDiscovery warp MultiServersDiscovery提供服务发现
+
+```
+HTTP/1.1 200 OK
+X-Rrpc-Servers: tcp@[::]:9315,tcp@[::]:9316
+Date: Sun, 21 Aug 2022 14:25:46 GMT
+Content-Length: 0
+```
